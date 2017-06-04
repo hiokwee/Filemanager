@@ -1,0 +1,20 @@
+{
+	"name": "hiokwee/filemanager",
+	"license": "MIT",
+    	"authors": [{
+            	"name": "Chia Hiok Wee",
+        	"email": "chiahiokwee@gmail.com"
+            	"role": "Developer"
+       	}],
+	"support": {
+        	"email": "chiahiokwee@gmail.com"
+    	},
+	"require": {
+		"xenolope/quahog": "2.*"
+    	},
+	"autoload": {
+        	"psr-4": {
+            		"Hiokwee\\Filemanager\\": "src/"
+        	}
+    	}
+}

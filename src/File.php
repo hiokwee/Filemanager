@@ -2,7 +2,6 @@
 namespace Hiokwee\Filemanager;
 
 require_once('RuntimeException.php'); 
-require __DIR__ . '/vendor/autoload.php';
 
 /**
  * Class File

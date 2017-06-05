@@ -2,11 +2,12 @@
 
 > ### methods
 
-1. **File(string  $_target_dir)**
+1. **File(string  $_target_dir)** <br />
 *** *$_target_dir	The target directory where the files will be saved*
 
-**upload(string  $param_name) : boolean**__
-__*$param_name	The HTML form input field name*
+2. **upload(string  $param_name) : boolean**
+
+*** *$param_name	The HTML form input field name*
 
 **delFileByName(string  $name) : boolean**
 *$name		Name of the file*

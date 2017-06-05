@@ -1,46 +1,38 @@
 # Filemanager
 
-[methods]
+> ## [methods]
 
-__construct(string  $_target_dir) 
+* __construct(string  $_target_dir) 
+*$_target_dir	The target directory where the files will be saved*
 
-  $_target_dir	The target directory where the files will be saved
+* upload(string  $param_name) : boolean
+*$param_name	The HTML form input field name*
 
-upload(string  $param_name) : boolean
+* delFileByName(string  $name) : boolean
+*$name		Name of the file*
 
-  $param_name	The HTML form input field name
+* getFileByName(string  $name) : boolean
+*$name		Name of the file*
 
-delFileByName(string  $name) : boolean
-
-  $name		Name of the file
-
-getFileByName(string  $name) : boolean
-
-  $name		Name of the file
-
-getFileList() : string
-
-getTargetFolder() : string
+* getFileList() : string
+*getTargetFolder() : string*
   
-setAllowedExtensions(array<mixed,string>  $extensions) 
+* setAllowedExtensions(array<mixed,string>  $extensions) 
+*$extensions	The permitted extension types*
 
-  $extensions	The permitted extension types
+* setOnlyAllowImage(boolean  $image_only) 
+*$image_only	Only image files are permitted*
 
-setOnlyAllowImage(boolean  $image_only) 
+* setMaxFileSize(integer  $max_size) 
+*$max_size	Maximum permitted file size in bytes*
 
-  $image_only	Only image files are permitted
-
-setMaxFileSize(integer  $max_size) 
-
-  $max_size	Maximum permitted file size in bytes
-
-setScanFile(boolean  $scan_file) 
-
-  $scan_file	Enable anti-virus file scan
+* setScanFile(boolean  $scan_file) 
+*$scan_file	Enable anti-virus file scan*
 
 
-[example]
+> ## [example]
 
+```
 $fm = new File("uploads/");
 
 $fm->setAllowedExtensions(["PNG", "GIF", "TXT"]);
@@ -101,3 +93,5 @@ if (isset($_POST["act"])) {
         }
 
 }
+
+```

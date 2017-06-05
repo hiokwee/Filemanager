@@ -2,8 +2,8 @@
 
 > ### methods
 
-**File(string  $_target_dir)**__
-__*$_target_dir	The target directory where the files will be saved*
+1. **File(string  $_target_dir)**
+*** *$_target_dir	The target directory where the files will be saved*
 
 **upload(string  $param_name) : boolean**__
 __*$param_name	The HTML form input field name*

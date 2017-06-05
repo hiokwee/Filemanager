@@ -1,48 +1,42 @@
 # Filemanager
 
-> ## [methods]
+> ### methods
 
-* __construct(string  $_target_dir) 
+** __construct(string  $_target_dir)**
 *$_target_dir	The target directory where the files will be saved*
 
-* upload(string  $param_name) : boolean
+**upload(string  $param_name) : boolean**
 *$param_name	The HTML form input field name*
 
-* delFileByName(string  $name) : boolean
+**delFileByName(string  $name) : boolean**
 *$name		Name of the file*
 
-* getFileByName(string  $name) : boolean
+**getFileByName(string  $name) : boolean**
 *$name		Name of the file*
 
-* getFileList() : string
+**getFileList() : string**
 *getTargetFolder() : string*
   
-* setAllowedExtensions(array<mixed,string>  $extensions) 
+**setAllowedExtensions(array<mixed,string>  $extensions)**
 *$extensions	The permitted extension types*
 
-* setOnlyAllowImage(boolean  $image_only) 
+**setOnlyAllowImage(boolean  $image_only)**
 *$image_only	Only image files are permitted*
 
-* setMaxFileSize(integer  $max_size) 
+**setMaxFileSize(integer  $max_size)** 
 *$max_size	Maximum permitted file size in bytes*
 
-* setScanFile(boolean  $scan_file) 
+**setScanFile(boolean  $scan_file)**
 *$scan_file	Enable anti-virus file scan*
 
-
-> ## [example]
+> ### example
 
 ```
 $fm = new File("uploads/");
-
 $fm->setAllowedExtensions(["PNG", "GIF", "TXT"]);
-
 $fm->setOnlyAllowImage(true);
-
 $fm->setMaxFileSize(5120);
-
 $fm->setScanFile(true);
-
 if (isset($_POST["act"])) {
 
         if ($_POST["act"] === "upload") {

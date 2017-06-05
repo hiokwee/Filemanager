@@ -2,33 +2,33 @@
 
 > ### methods
 
-1. **File(string  $_target_dir)** <br />
-*** *$_target_dir	The target directory where the files will be saved*
+1. **File (string  $_target_dir)** <br />
+*$_target_dir	The target directory where the files will be saved*
 
-2. **upload(string  $param_name) : boolean**
+2. **upload (string  $param_name) : boolean** <br />
+*$param_name	The HTML form input field name*
 
-*** *$param_name	The HTML form input field name*
-
-**delFileByName(string  $name) : boolean**
+3. **delFileByName (string  $name) : boolean** <br />
 *$name		Name of the file*
 
-**getFileByName(string  $name) : boolean**
+4. **getFileByName (string  $name) : boolean** <br />
 *$name		Name of the file*
 
-**getFileList() : string**
+5. **getFileList () : string** <br />
 *getTargetFolder() : string*
   
-**setAllowedExtensions(array<mixed,string>  $extensions)**
+6. **setAllowedExtensions (array<mixed,string>  $extensions)** <br />
 *$extensions	The permitted extension types*
 
-**setOnlyAllowImage(boolean  $image_only)**
+7. **setOnlyAllowImage(boolean  $image_only)** <br />
 *$image_only	Only image files are permitted*
 
-**setMaxFileSize(integer  $max_size)** 
+8. **setMaxFileSize(integer  $max_size)** <br />
 *$max_size	Maximum permitted file size in bytes*
 
-**setScanFile(boolean  $scan_file)**
+9. **setScanFile(boolean  $scan_file)** <br />
 *$scan_file	Enable anti-virus file scan*
+
 
 
 > ### example

@@ -16,18 +16,18 @@
 
 5. **getFileList () : string** <br />
 
-6. **getTargetFolder() : string** <br />
+6. **getTargetFolder () : string** <br />
   
 7. **setAllowedExtensions (array\<mixed,string\>  $extensions)** <br />
 *$extensions* &nbsp;&nbsp; The permitted extension types
 
-8. **setOnlyAllowImage(boolean  $image_only)** <br />
-*$image_only* &nbsp;&nbsp; Only image files are permitted
+8. **setOnlyAllowImage (boolean  $image_only)** <br />
+*$image_only* &nbsp;&nbsp; Permit only image file types
 
-9. **setMaxFileSize(integer  $max_size)** <br />
+9. **setMaxFileSize (integer  $max_size)** <br />
 *$max_size* &nbsp;&nbsp; Maximum permitted file size in bytes
 
-10. **setScanFile(boolean  $scan_file)** <br />
+10. **setScanFile (boolean  $scan_file)** <br />
 *$scan_file* &nbsp;&nbsp; Enable anti-virus file scan
 <br />
 

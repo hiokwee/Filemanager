@@ -1,9 +1,10 @@
 {
 	"name": "hiokwee/filemanager",
-	"license": "",
+	"license": "MIT",
     	"authors": [{
             	"name": "Chia Hiok Wee",
         	"email": "chiahiokwee@gmail.com",
+		"homepage": "https://github.com/hiokwee/Filemanager",
             	"role": "Developer"
        	}],
 	"support": {

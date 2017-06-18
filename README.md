@@ -24,8 +24,8 @@
 8. **setOnlyAllowImage (boolean  $image_only)** <br />
 *$image_only* &nbsp;&nbsp; Permit only image file types
 
-9. **setMaxFileSize (integer  $max_size)** <br />
-*$max_size* &nbsp;&nbsp; Maximum permitted file size in bytes
+9. **setMaxFileSize (integer  $max_file_size)** <br />
+*$max_file_size* &nbsp;&nbsp; Maximum permitted file size in bytes
 
 10. **setScanFile (boolean  $scan_file)** <br />
 *$scan_file* &nbsp;&nbsp; Enable anti-virus file scan

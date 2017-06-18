@@ -1,12 +1,12 @@
 <?php
 namespace Hiokwee\Filemanager;
 
-require_once('RuntimeException.php'); 
+require_once('RuntimeException.php');
 
 /**
  * Class File
  *
- * @version 1.0.1
+ * @version 1.0.2
  * @package Filemanager
  */
 class File
@@ -27,7 +27,7 @@ class File
 	/** @var string $target_dir Taregt directory where the files will be saved */
 	private $target_dir;
 	/** @var int $max_size max permitted file size in bytes */
-	private $max_size;
+	private $max_file_size;
 	/** @var string[] $allowed_formats permitted extension types */
 	private $allowed_formats;
 	/** @var bool $image_only control for only allowing image files */
@@ -37,28 +37,28 @@ class File
 
 
 	/**
-     	 * Instantiate a Hiokwee\Filemanager instance
-     	 *
+	 * Instantiate a Hiokwee\Filemanager instance
+	 *
 	 * Check if $_target_dir exists and initialise variables to their default values
 	 * The system folder self::SYSFOLDER will be created if it does not exist
 	 * 
-     	 * @throws RuntimeException
-     	 * @param string $_target_dir The target directory
-     	 */
+	 * @throws RuntimeException
+	 * @param string $_target_dir The target directory
+	 */
 	function __construct($_target_dir) {
 
-		//remove empty space and 
-		//enforce folder restriction. it should neither be empty or hidden
+		//remove empty space and
+		//enforce folder restriction. it should neither be empty or should the folder specified be hidden
 
 		$_target_dir = trim($_target_dir);
 		if ($_target_dir === "" || substr($_target_dir, 0, 1) === "." ) {
 			throw new RuntimeException("Invalid folder");
 		}
 
-		//append '/' to the string if needed 
+		//append '/' to the string if needed
 		if (substr($_target_dir, strlen($_target_dir)-1) !== "/") {
-			$_target_dir .= "/"; 
-		} 	
+			$_target_dir .= "/";
+		}
 
 		//check if folder exists; module will not handle folder creation
 		//create system folder if it does not exist
@@ -67,7 +67,7 @@ class File
 			if (!is_dir(self::SYSFOLDER)) {
 				if (!mkdir(self::SYSFOLDER, 0700, true)) {
 					throw new RuntimeException("Failed to create system folder");
-				}	
+				}
 			}
 		}
 		else {
@@ -75,202 +75,235 @@ class File
 		}
 
 		//initialise variables
-		$this->allowed_formats = self::ALLOWEDEXT;
-		$this->max_size = self::MAXFILESIZE;
+		$this->allowed_ext = self::ALLOWEDEXT;
+		$this->max_file_size = self::MAXFILESIZE;
 		$this->only_image = self::ONLYIMG;
-   	}
+	}
 
 	/**
-     	 * Upload the file specified
+	 * Upload the file specified
 	 *
-     	 * The actual file will be renamed to its md5 hash and saved to the system folder
-	 * A symlink will be created using the original filename in the specified folder 	 
+	 * The actual file will be renamed to its md5 hash and saved to the system folder
+	 * A symlink will be created using the original filename in the specified folder
 	 * Subsequent file with the same md5 hash will be represented using symlink
 	 * A 0 byte touch file will also be created to help determine if there are any symlinks left
-	 * Using ClamAV for anti-virus scan 
-     	 *
+	 * Using ClamAV for anti-virus scan
+	 *
 	 * @see https://packagist.org/packages/xenolope/quahog PHP client library for ClamAV clamd daemon
 	 * @see https://www.clamav.net Open source antivirus engine
 	 * @throws RuntimeException Any errors encountered during upload
-     	 * @param string $param_name The HTML form input field name
-     	 * @return bool Return true if the upload was successful 
-     	 */
+	 * @param string $param_name The HTML form input field name
+	 * @return bool Return true if the upload was successful
+	 */
 	function upload($param_name) {
-		//target files
-		$target_md5 = md5_file($_FILES[$param_name]["tmp_name"]);
-		$target_file = self::SYSFOLDER . $target_md5;
-		$target_link = $this->target_dir . $_FILES[$param_name]["name"];
-		$target_link_file = $target_file . "_" .  str_replace("/", "_", $target_link);
+
+		$target_tmp_path = $_FILES[$param_name]["tmp_name"];
+
+		/* define names of the 3 files required and their file paths */
+		//symlink with the original filename
+		$target_link = $_FILES[$param_name]["name"];
+		$target_link_path = $this->target_dir . $target_link; //user defined directory
+
+		//actual file which will be renamed to its hash
+		$target_file = md5_file($target_tmp_path);
+		$target_file_path = self::SYSFOLDER . $target_file; //system folder
+
+		//0 byte file for detecting any remaining symlinks
+		$target_touch_file = $target_file . "_" .  str_replace("/", "_", $target_link_path);
+		$target_touch_file_path = self::SYSFOLDER . $target_touch_file; //system folder
 
 
 		//0.check error code
 		if (!isset($_FILES[$param_name]["error"]) || is_array($_FILES[$param_name]["error"])) {
-        		throw new RuntimeException("Invalid parameters");
-    		}
-    		switch ($_FILES[$param_name]["error"]) {
-        		case UPLOAD_ERR_OK:
-            			break;
-        		case UPLOAD_ERR_NO_FILE:
-            			throw new RuntimeException("No file sent");
-        		case UPLOAD_ERR_INI_SIZE:
-        		case UPLOAD_ERR_FORM_SIZE:
-            			throw new RuntimeException("Exceeded filesize limit");
-        		default:
-            			throw new RuntimeException("Unknown errors");
-    		}
+			throw new RuntimeException("Invalid parameters");
+		}
+		switch ($_FILES[$param_name]["error"]) {
+			case UPLOAD_ERR_OK:
+				break;
+			case UPLOAD_ERR_NO_FILE:
+				error_log("No file sent");
+				return false;
+			case UPLOAD_ERR_INI_SIZE:
+			case UPLOAD_ERR_FORM_SIZE:
+				error_log("Exceeded filesize limit");
+				return false;
+			default:
+				error_log("Unknown errors");
+				return false;
+		}
 
 		//1.check file extension
-		$ext = strtolower(pathinfo($target_link, PATHINFO_EXTENSION));
-		if (in_array($ext, $this->allowed_formats) === false){
-			throw new RuntimeException("File type not supported");
-      		}
+		$ext = strtolower(pathinfo($target_link_path, PATHINFO_EXTENSION));
+		if (in_array($ext, $this->allowed_ext) === false){
+			error_log("File type not supported");
+			return false;
+		}
 
 		//2.check if image file
 		if ($this->image_only) {
-    			$image_size = getimagesize($_FILES[$param_name]["tmp_name"]);
-    			if ($image_size === false) {
-       	 		throw new RuntimeException("Not an image file");
-    			} 
+			$image_size = getimagesize($target_tmp_path);
+			if ($image_size === false) {
+				error_log("Not an image file");
+				return false;
+			}
 		}
 
 		//3.check if file already exists
-		if (is_link($target_link)) {
-    			throw new RuntimeException("File with the same name exists");
+		if (is_link($target_link_path)) {
+			error_log("File with the same name exists");
+			return false;
 		}
 
 		//4.check file size
-		if ($_FILES[$param_name]["size"] > $this->max_size) {
-    			throw new RuntimeException("Exceeded max file size");
+		if ($_FILES[$param_name]["size"] > $this->max_file_size) {
+			error_log("Exceeded max file size");
+			return false;
 		}
 
 		//5.anti-virus scan
 		if ($this->scan_file) {
 			$socket = (new \Socket\Raw\Factory())->createClient('unix:///var/run/clamav/clamd.ctl');
 			$quahog = new \Xenolope\Quahog\Client($socket);
-			$result = $quahog->scanStream([$_FILES[$param_name]["tmp_name"]], 1024);
-			//$result = $quahog->scanStream(file_get_contents([$_FILES[$param_name]["tmp_name"]]), 1024);
-			//$result = $quahog->scanFile([$_FILES[$param_name]["tmp_name"]]);
+			$result = $quahog->scanStream([$target_tmp_path], 1024);
+			//$result = $quahog->scanStream(file_get_contents([$target_tmp_path]), 1024);
+			//$result = $quahog->scanFile([$target_tmp_path]);
 
 			if ($result['status'] !== 'OK') {
-				throw new RuntimeException("Failed virus scan (" . $result['reason'] . ")");
+				error_log("Failed virus scan (" . $result['reason'] . ")");
+				return false;
 			}
 		}
 
-		//upload file
-		if (!file_exists($target_file)) {
+		//copy & rename file to system folder if it does not exist
+		if (!file_exists($target_file_path)) {
 			//new file
-			if (!move_uploaded_file($_FILES[$param_name]["tmp_name"], $target_file)) {
+			if (!move_uploaded_file($target_tmp_path, $target_file_path)) {
 				throw new RuntimeException("Failed to save file");
 			}
 		}
 
-		//file created/exists; proceed to create symlink and touch file
-		if (touch($target_link_file)) {
-			if (!symlink($target_file, $target_link)) {
-				throw new RuntimeException("Failed to create link");
-			}
-		}	
-		else {
-        		throw new RuntimeException("Failed to create touch file");
+		//proceed to create symlink and touch file
+		if (!touch($target_touch_file_path)) {
+			throw new RuntimeException("Failed to create touch file");
 		}
+		if (!symlink($target_file_path, $target_link_path)) {
+			throw new RuntimeException("Failed to create link");
+		}
+
 		return true;
 	}
 
-    	/**
-     	 * Delete file by name
+	/**
+	 * Delete file by name
 	 *
 	 * The symlink with the same name will be unlinked
 	 * At the same time, the matching touch file in the system folder will be deleted
-     	 *
-     	 * @throws RuntimeException
-     	 * @param string $name Name of the file
-     	 * @return bool Return true if the file was deleted 
-     	 */
+	 *
+	 * @throws RuntimeException
+	 * @param string $name Name of the file
+	 * @return bool Return true if the file was deleted
+	 */
 	function delFileByName($name) {
-		$target_link = $this->target_dir . $name;
-		//check if file exists
-		if (!is_link($target_link)) {
-			throw new RuntimeException($name . " is not found");
-		}
-		$target_link_file = str_replace("/", "_", $target_link);
-    			if(is_link($target_link)) {
-				$target = readlink($target_link); 
-				$target_link_file = $target . "_" . $target_link_file; 
-        			if (unlink($target_link)) {
-        				if (unlink($target_link_file)) {
-						$files = glob($target . "*");
-						if (count($files) == 1) {
-							unlink($target);	
- 						}
-						return true;
-					}
-				}
-    			} 
-		return false;
-	}
+		$target_link_path = $this->target_dir . $name;
 
-    	/**
-     	 * Download file by name
-     	 *
-     	 * @throws RuntimeException
-     	 * @param string $name Name of the file
-     	 * @return bool Return true if the download was successful
-     	 */
-	function getFileByName($name) {
-		$target_link = $this->target_dir . $name;
 		//check if file exists
-		if (!is_link($target_link)) {
-			throw new RuntimeException($name . " is not found");
+		if (!is_link($target_link_path)) {
+			error_log($name . " link does not exist");
+			return false;
 		}
-		$target = readlink($target_link);
-		if (file_exists($target)) {
-			header("Content-Type: application/octet-stream");
-			header("Content-Transfer-Encoding: Binary"); 
-			header("Content-disposition: attachment; filename=\"" . basename($target_link) . "\""); 
-			set_time_limit(0);
-			$file = @fopen($target,"rb");
-			while(!feof($file))
-			{
-				print(@fread($file, 1024*8));
-				ob_flush(); //discard any data in the output buffer (if possible)
-				flush(); // flush headers (if possible)
+
+		//construct touch file path
+		$target_touch_file_path = str_replace("/", "_", $target_link_path);
+		$target_file_path = readlink($target_link_path);
+		$target_touch_file_path = $target_file_path . "_" . $target_touch_file_path;
+
+		if (!unlink($target_link_path)) {
+			throw new RuntimeException("Failed to delete link");
+		}
+		if (!unlink($target_touch_file_path)) {
+			throw new RuntimeException("Failed to delete touch file");
+		}
+
+		//check if there are any remaining symlinks of the file (by checking the number of touch file left)
+		$files = glob($target_file_path . "*");
+
+		//remove 'actual file' if no more symlink left
+		if (count($files) == 1) {
+			if (!unlink($target_file_path)) {
+				throw new RuntimeException("Failed to delete file");
 			}
-			exit();
-		}
-		return false;
+ 		}
+
+		return true;
 	}
 
+	/**
+	 * Download file by name
+	 *
+	 * @throws RuntimeException
+	 * @param string $name Name of the file
+	 * @return bool Return true if the download was successful
+	 */
+	function getFileByName($name) {
+		$target_link_path = $this->target_dir . $name;
 
-    	/**
-     	 * Return names of files found in the folder
-     	 *
-     	 * @return string The JSON file list 
-     	 */
-    	function getFileList() {
-		$files = scandir($this->target_dir, 0);
-		$files = array_diff($files, array('..', '.'));
-		return json_encode(array_values($files));
-    	}
+		//check if link/file exists
+		if (!is_link($target_link_path)) {
+			error_log($name . " link does not exist");
+			return false;
+		}
+		$target_file_path = readlink($target_link_path);
+		if (!file_exists($target_file_path)) {
+			throw new RuntimeException("File not found");
+		}
 
-
-    	/**
-     	 * Return the target folder
-     	 *
-     	 * @return string Name of the target folder
-     	 */
-    	function getTargetFolder() {
-		return $this->target_dir;
-    	}
+		//proceed to download file
+		header("Content-Type: application/octet-stream");
+		header("Content-Transfer-Encoding: Binary");
+		header("Content-disposition: attachment; filename=\"" . basename($target_link_path) . "\"");
+		set_time_limit(0);
+		$file = @fopen($target_file_path,"rb");
+		while(!feof($file))
+		{
+			print(@fread($file, 1024*8));
+			ob_flush(); //discard any data in the output buffer (if possible)
+			flush(); // flush headers (if possible)
+		}
+		exit();
+		return true;
+	}
 
 
 	/**
-     	 * Set the permitted file extension types 
- 	 * Max extension length determined by self::MAXEXTLEN
-     	 *
-     	 * @throws RuntimeException
-     	 * @param string[] $extensions The permitted extension types
-     	 */
-    	function setAllowedExtensions($extensions) {
+	 * Return names of files found in the folder
+	 *
+	 * @return string The JSON file list
+	 */
+	function getFileList() {
+		$files_in_dir = scandir($this->target_dir, 0);
+		$files_in_dir = array_diff($files_in_dir, array('..', '.'));
+		return json_encode(array_values($files_in_dir));
+	}
+
+
+	/**
+	 * Return the target folder
+	 *
+	 * @return string Name of the target folder
+	 */
+	function getTargetFolder() {
+		return $this->target_dir;
+	}
+
+
+	/**
+	 * Set the permitted file extension types
+	 * Max extension length determined by self::MAXEXTLEN
+	 *
+	 * @throws RuntimeException
+	 * @param string[] $extensions The permitted extension types
+	 */
+	function setAllowedExtensions($extensions) {
 		if (!is_array($extensions)) {
 			throw new RuntimeException("Invalid parameter");
 		}
@@ -281,17 +314,17 @@ class File
 			}
 			$extensions[$keys] = strtolower($extension);
 		}
-		$this->allowed_formats = array_unique($extensions);
-    	}
+		$this->allowed_ext = array_unique($extensions);
+	}
 
 
-    	/**
-     	 * Set if only image files are allowed
-     	 *
-     	 * @throws RuntimeException
-     	 * @param bool $image_only Only image files are permitted 
-     	 */
-    	function setOnlyAllowImage($image_only) {
+	/**
+	 * Set if only image files are allowed
+	 *
+	 * @throws RuntimeException
+	 * @param bool $image_only Only image files are permitted
+	 */
+	function setOnlyAllowImage($image_only) {
 		if (!is_bool($image_only)) {
 			throw new RuntimeException("Invalid parameter");
 		}
@@ -299,26 +332,26 @@ class File
 	}
 
 
-    	/**
-     	 * Set the maximum permitted file size
-     	 *
-     	 * @throws RuntimeException
-     	 * @param int $max_size Maximum permitted file size in bytes
-     	 */
-    	function setMaxFileSize($max_size) {
-		if (!is_int($max_size)) {
+	/**
+	 * Set the maximum permitted file size
+	 *
+	 * @throws RuntimeException
+	 * @param int $max_file_size Maximum permitted file size in bytes
+	 */
+	function setMaxFileSize($max_file_size) {
+		if (!is_int($max_file_size)) {
 			throw new RuntimeException("Invalid parameter");
 		}
-		$this->max_size = $max_size;
+		$this->max_file_size = $max_file_size;
 	}
 
 	/**
-     	 * Enable clamav anti-virus scan
-     	 *
-     	 * @throws RuntimeException
-     	 * @param bool $scan_file Enable anti-virus file scan
-     	 */
-    	function setScanFile($scan_file) {
+	 * Enable clamav anti-virus scan
+	 *
+	 * @throws RuntimeException
+	 * @param bool $scan_file Enable anti-virus file scan
+	 */
+	function setScanFile($scan_file) {
 		if (!is_bool($scan_file)) {
 			throw new RuntimeException("Invalid parameter");
 		}
